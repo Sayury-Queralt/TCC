@@ -8,6 +8,4 @@ RUN apt update && apt install -y \
     default-mysql-client \
     nano
 
-ENTRYPOINT []
-
-CMD ["sh", "-c", "sleep 10 && /usr/sbin/opensips -F"]
+CMD ["/usr/sbin/opensips", "-F"]

@@ -1,0 +1,13 @@
+FROM opensips/opensips:3.4
+
+RUN apt update && apt install -y \
+    opensips \
+    opensips-cli \
+    opensips-mysql-module \
+    opensips-auth-modules \
+    default-mysql-client \
+    nano
+
+ENTRYPOINT []
+
+CMD ["sh", "-c", "sleep 10 && /usr/sbin/opensips -F"]

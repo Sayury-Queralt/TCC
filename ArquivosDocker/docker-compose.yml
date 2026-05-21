@@ -1,0 +1,53 @@
+services:
+
+  mysql-db:
+    image: mysql:5.6
+    container_name: mysql-opensip
+
+    environment:
+      MYSQL_ROOT_PASSWORD: opensip
+      MYSQL_DATABASE: opensips_db
+      MYSQL_USER: opensips
+      MYSQL_PASSWORD: opensips
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - /home/tcc/Documents/Projeto_TCC/mysql_files:/var/lib/mysql
+      - /home/tcc/Documents/Projeto_TCC/opensips-sql/mysql:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-popensip"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - opensips-net
+
+
+  opensips:
+    build:
+      context: .
+      dockerfile: Dockerfile.opensips
+
+    container_name: opensips_server
+
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+
+    ports:
+      - "5060:5060/udp"
+
+    volumes:
+      - ./opensips-config:/etc/opensips
+
+    networks:
+      - opensips-net
+
+
+networks:
+  opensips-net:
+    driver: bridge

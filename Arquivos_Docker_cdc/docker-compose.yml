@@ -1,0 +1,72 @@
+services:
+  kafka:
+    image: quay.io/debezium/kafka:3.4
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      NODE_ID: 1
+      NODE_ROLE: combined
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    volumes:
+      - kafka-data:/kafka/data
+    networks:
+      - debezium-net
+    restart: unless-stopped
+
+  connect:
+    image: quay.io/debezium/connect:3.4
+    container_name: debezium-connect
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: opensips-connect
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_status
+    depends_on:
+      - kafka
+      - mysql-hist_opensip
+    networks:
+      - debezium-net
+    restart: unless-stopped
+
+  mysql-hist_opensip:
+    image: mysql:8.0
+    container_name: mysql-hist_opensip
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: hist_opensip_db
+      MYSQL_USER: cdc_db
+      MYSQL_PASSWORD: histopensip123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-hist-opensip-data:/var/lib/mysql
+    networks:
+      - debezium-net
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -proot123
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  kafka-data:
+  mysql-hist-opensip-data:
+
+networks:
+  debezium-net:
+    driver: bridge
